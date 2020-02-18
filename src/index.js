@@ -11,21 +11,23 @@ var privWIF = zencashjs.address.privKeyToWIF(priv)
 var pubKey = zencashjs.address.privKeyToPubKey(priv, true) // generate compressed pubKey
 
 var zAddr = zencashjs.address.pubKeyToAddr(pubKey)
+console.log(zAddr)
 
-const bip115BlockHeight = 142091
-const bip115BlockHash = '001f72eacd9e94cf7c6b91b878d9426eccc040de8f6042f148f8e5415f702b28'
+const blockHeight = 600030 // Example of current BLOCKHEIGHT
+const bip115BlockHeight = blockHeight - 150 // Chaintip - 150 blocks, the block used for the replay protection needs a sufficient number of confirmations
+const bip115BlockHash = '00070550a34f04c49568969efdadb5676655420ec1a2a8325390b922d309144d' // Blockhash of block 450000
 
 var txobj = zencashjs.transaction.createRawTx(
   [{
-      txid: '4fc87e74d2ee3b776d0df5b6d6f0b6da419f536d237642665e20059fe55cf08b', vout: 0,
-      scriptPubKey: ''
+      txid: '2ad340b94c11e61f12db01b24f81ce2aca1f600ec44377243bdd2993cebcd382', vout: 0,
+      scriptPubKey: '76a914fa1e82f226b4a53fccd6b8e63412d97c789f298e88ac'
   }],
-  [{address: 'ztZuyD5MaPSNdEyDKCZFc6vjyHVshWPWrLg', satoshis: 10000}],
+  [{address: 'ztZuyD5MaPSNdEyDKCZFc6vjyHVshWPWrLg', satoshis: 100000}],
   bip115BlockHeight,
   bip115BlockHash
 )
-
+console.log(txobj)
 console.log( zencashjs.transaction.serializeTx(txobj));
 
-var tx0 = zencashjs.transaction.signTx(txobj, 0, 'ac53d976e649bd9c20d8305507701c54201bf66e946998b1a834ffa78f242dec', true) // The final argument sets the `compressPubKey` boolean. It is `false` by default.
+var tx0 = zencashjs.transaction.signTx(txobj, 0, 'ac53d976e649bd9c20d8305507701c54201bf66e946998b1a834ffa78f242dec', false) // The final argument sets the `compressPubKey` boolean. It is `false` by default.
 console.log(zencashjs.transaction.serializeTx(tx0))
