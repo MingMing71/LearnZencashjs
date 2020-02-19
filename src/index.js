@@ -2,14 +2,16 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import './index.css';
 import zencashjs from 'zencashjs'
+import hdkey from 'hdkey'
+const bip39 = require('bip39')
 
-const priv = zencashjs.address.mkPrivKey('sea brown please gold erosion utility table thumb social')
+// const priv = zencashjs.address.mkPrivKey('sea brown please gold erosion utility table thumb social')
 
-const privWIF = zencashjs.address.privKeyToWIF(priv)
+// const privWIF = zencashjs.address.privKeyToWIF(priv)
 
-const pubKey = zencashjs.address.privKeyToPubKey(priv, true)
-const pubKeyHash = zencashjs.config.testnet.pubKeyHash
-const zAddr = zencashjs.address.pubKeyToAddr(pubKey, pubKeyHash)
+// const pubKey = zencashjs.address.privKeyToPubKey(priv, true)
+// const pubKeyHash = zencashjs.config.testnet.pubKeyHash
+// const zAddr = zencashjs.address.pubKeyToAddr(pubKey, pubKeyHash)
 
 function senZen(zen: Number = 0, address: String = "null") {
   var utxos = null;
@@ -78,10 +80,9 @@ function createHexRawTx(utxos, zen: Number = 0, address: String = "null") {
         bip115BlockHash
       )
 
-      const tx0 = zencashjs.transaction.signTx(txobj, 0, priv, true) // The final argument sets the `compressPubKey` boolean. It is `false` by default.
+      const tx0 = zencashjs.transaction.signTx(txobj, 0, priv, false) // The final argument sets the `compressPubKey` boolean. It is `false` by default.
       const serializedTx = zencashjs.transaction.serializeTx(tx0);
-
-      // sendRawTx(serializedTx)
+      sendRawTx(serializedTx)
       return serializedTx;
     }
   }
@@ -105,5 +106,18 @@ function sendRawTx(rawTx: String) {
   }
   http.send(params);
 }
+
+const mnemonic = 'capable under wrap episode giant upset brave illness reward chicken useless above';
+const seed = bip39.mnemonicToSeed(mnemonic).then((respone) => console.log(respone.toString('hex')));
+
+const root = hdkey.fromMasterSeed(seed);
+const masterPrivateKey = root.privateKey.toString('hex');
+const addrNode = root.derive("m/44'/121'/0'/0/0"); 
+const priv = addrNode._privateKey.toString('hex');
+const pubKey = zencashjs.address.privKeyToPubKey(priv);
+const pubKeyHash = zencashjs.config.testnet.pubKeyHash;
+const zAddr = zencashjs.address.pubKeyToAddr(pubKey, pubKeyHash)
+
+console.log(zAddr)
 
 senZen(0.01, 'ztqxUEzHwpxwSjKHm2AsFAxdbBbLZiYWVqX');
