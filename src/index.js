@@ -7,31 +7,103 @@ const priv = zencashjs.address.mkPrivKey('sea brown please gold erosion utility 
 
 const privWIF = zencashjs.address.privKeyToWIF(priv)
 
-const pubKey = zencashjs.address.privKeyToPubKey(priv, true) // generate compressed pubKey
-// add testnet pubKeyHash
+const pubKey = zencashjs.address.privKeyToPubKey(priv, true)
 const pubKeyHash = zencashjs.config.testnet.pubKeyHash
 const zAddr = zencashjs.address.pubKeyToAddr(pubKey, pubKeyHash)
-console.log(zAddr)
 
-const blockHeight = 600030 // Example of current BLOCKHEIGHT
-const bip115BlockHeight = blockHeight - 150 // Chaintip - 150 blocks, the block used for the replay protection needs a sufficient number of confirmations
-const bip115BlockHash = '00070550a34f04c49568969efdadb5676655420ec1a2a8325390b922d309144d' // Blockhash of block 450000
+function senZen(zen: Number = 0, address: String = "null") {
+  var utxos = null;
 
-// current balance (total utxos)
-const txobj = zencashjs.transaction.createRawTx(
-  [{
-      txid: 'f0902d623f45982b07f7c136cd82e2d82e1014d6c38bed26a6a64fa66552c30d', vout: 0,
-      scriptPubKey: '76a9149287d2a35f38eda75f6e63e26a83b9db830cf0cd88ac206deeb89e4ead2205e619d70334e7bf9756702a83725cf7edfa7184eb4805080003222709b4'
-  }],
-  [
-    {address: 'ztZuyD5MaPSNdEyDKCZFc6vjyHVshWPWrLg', satoshis: 50000},
-    {address: zAddr, satoshis: 49949950}, // this is change address
-  ],
-  bip115BlockHeight,
-  bip115BlockHash
-)
-console.log(txobj)
-console.log( zencashjs.transaction.serializeTx(txobj));
+  const Http = new XMLHttpRequest();
+  const url = 'https://explorer-testnet.zensystem.io/api/addr/' + zAddr + '/utxo'
+  Http.open("GET", url);
+  Http.send();
 
-const tx0 = zencashjs.transaction.signTx(txobj, 0, 'ac53d976e649bd9c20d8305507701c54201bf66e946998b1a834ffa78f242dec', true) // The final argument sets the `compressPubKey` boolean. It is `false` by default.
-console.log(zencashjs.transaction.serializeTx(tx0))
+  Http.onreadystatechange = (e) => {
+    if (Http.readyState == 4 && Http.status == 200) {
+      var data = JSON.parse(Http.response);
+      utxos = data;
+
+      createHexRawTx(utxos, zen, address);
+      return;
+    }
+  }
+}
+
+
+function createHexRawTx(utxos, zen: Number = 0, address: String = "null") {
+  const lastUTXO = utxos.find(function(transaction) { 
+    return transaction.height; 
+  }); 
+  if(!lastUTXO.height) {
+    alert("Last transaction was not confirmed");
+    return;
+  }
+
+  const blockHeight = lastUTXO.height
+  const bip115BlockHeight = blockHeight - 150
+  var bip115BlockHash = null;
+
+  var balance;
+  if (utxos.length > 1) {
+    balance = utxos.reduce((txA, txB) => txA.satoshis + txB.satoshis);;
+  }
+  else {
+    balance = utxos[0].satoshis;
+  }
+
+  const amountToSend = zen * 100000000;
+  const totalChange = amountToSend * 1.01; // fee 1%
+
+  const Http = new XMLHttpRequest();
+  const url = 'https://explorer-testnet.zensystem.io/api/block-index/' + bip115BlockHeight
+  Http.open("GET", url);
+  Http.send();
+
+  Http.onreadystatechange = (e) => {
+    if (Http.readyState == 4 && Http.status == 200) {
+      var data = JSON.parse(Http.response);
+      bip115BlockHash = data.blockHash;
+
+      const txobj = zencashjs.transaction.createRawTx(
+        [{
+          txid: lastUTXO.txid, vout: lastUTXO.vout,
+          scriptPubKey: lastUTXO.scriptPubKey
+        }],
+        [
+          { address: address, satoshis: amountToSend },
+          { address: zAddr, satoshis: balance - totalChange },
+        ],
+        bip115BlockHeight,
+        bip115BlockHash
+      )
+
+      const tx0 = zencashjs.transaction.signTx(txobj, 0, priv, true) // The final argument sets the `compressPubKey` boolean. It is `false` by default.
+      const serializedTx = zencashjs.transaction.serializeTx(tx0);
+
+      // sendRawTx(serializedTx)
+      return serializedTx;
+    }
+  }
+}
+
+function sendRawTx(rawTx: String) {
+  var http = new XMLHttpRequest();
+  var url = 'https://explorer-testnet.zensystem.io/api/tx/send';
+  var params = "rawtx=" + rawTx;
+
+  http.open('POST', url);
+  http.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
+
+  http.onreadystatechange = function () {//Call a function when the state changes.
+    if (http.readyState == 4 && http.status == 200) {
+      alert(http.responseText);
+    }
+    else {
+      // alert(http.responseText);
+    }
+  }
+  http.send(params);
+}
+
+senZen(0.01, 'ztqxUEzHwpxwSjKHm2AsFAxdbBbLZiYWVqX');
