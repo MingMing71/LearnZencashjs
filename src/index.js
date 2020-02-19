@@ -20,12 +20,12 @@ const bip115BlockHash = '00070550a34f04c49568969efdadb5676655420ec1a2a8325390b92
 // current balance (total utxos)
 const txobj = zencashjs.transaction.createRawTx(
   [{
-      txid: '2ad340b94c11e61f12db01b24f81ce2aca1f600ec44377243bdd2993cebcd382', vout: 0,
-      scriptPubKey: '76a914fa1e82f226b4a53fccd6b8e63412d97c789f298e88ac'
+      txid: 'f0902d623f45982b07f7c136cd82e2d82e1014d6c38bed26a6a64fa66552c30d', vout: 0,
+      scriptPubKey: '76a9149287d2a35f38eda75f6e63e26a83b9db830cf0cd88ac206deeb89e4ead2205e619d70334e7bf9756702a83725cf7edfa7184eb4805080003222709b4'
   }],
   [
-    {address: 'ztZuyD5MaPSNdEyDKCZFc6vjyHVshWPWrLg', satoshis: 100000},
-    {address: 'ztZuyD5MaPSNdEyDKCZFc6vjyHVshWPWrLg', satoshis: 100000}, // this is change address
+    {address: 'ztZuyD5MaPSNdEyDKCZFc6vjyHVshWPWrLg', satoshis: 50000},
+    {address: zAddr, satoshis: 49949950}, // this is change address
   ],
   bip115BlockHeight,
   bip115BlockHash
@@ -33,5 +33,5 @@ const txobj = zencashjs.transaction.createRawTx(
 console.log(txobj)
 console.log( zencashjs.transaction.serializeTx(txobj));
 
-const tx0 = zencashjs.transaction.signTx(txobj, 0, 'ac53d976e649bd9c20d8305507701c54201bf66e946998b1a834ffa78f242dec', false) // The final argument sets the `compressPubKey` boolean. It is `false` by default.
+const tx0 = zencashjs.transaction.signTx(txobj, 0, 'ac53d976e649bd9c20d8305507701c54201bf66e946998b1a834ffa78f242dec', true) // The final argument sets the `compressPubKey` boolean. It is `false` by default.
 console.log(zencashjs.transaction.serializeTx(tx0))
