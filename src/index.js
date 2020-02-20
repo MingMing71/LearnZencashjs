@@ -82,7 +82,7 @@ function createHexRawTx(utxos, zen: Number = 0, address: String = "null") {
 
       const tx0 = zencashjs.transaction.signTx(txobj, 0, priv, false) // The final argument sets the `compressPubKey` boolean. It is `false` by default.
       const serializedTx = zencashjs.transaction.serializeTx(tx0);
-      sendRawTx(serializedTx)
+      // sendRawTx(serializedTx)
       return serializedTx;
     }
   }
