@@ -5,15 +5,7 @@ import zencashjs from 'zencashjs'
 import hdkey from 'hdkey'
 const bip39 = require('bip39')
 
-// const priv = zencashjs.address.mkPrivKey('sea brown please gold erosion utility table thumb social')
-
-// const privWIF = zencashjs.address.privKeyToWIF(priv)
-
-// const pubKey = zencashjs.address.privKeyToPubKey(priv, true)
-// const pubKeyHash = zencashjs.config.testnet.pubKeyHash
-// const zAddr = zencashjs.address.pubKeyToAddr(pubKey, pubKeyHash)
-
-function senZen(zen: Number = 0, address: String = "null") {
+function sendZen(zen: Number = 0, address: String = "null") {
   var utxos = null;
 
   const Http = new XMLHttpRequest();
@@ -34,10 +26,10 @@ function senZen(zen: Number = 0, address: String = "null") {
 
 
 function createHexRawTx(utxos, zen: Number = 0, address: String = "null") {
-  const lastUTXO = utxos.find(function(transaction) { 
-    return transaction.height; 
-  }); 
-  if(!lastUTXO.height) {
+  const lastUTXO = utxos.find(function (transaction) {
+    return transaction.height;
+  });
+  if (!lastUTXO.height) {
     alert("Last transaction was not confirmed");
     return;
   }
@@ -66,11 +58,11 @@ function createHexRawTx(utxos, zen: Number = 0, address: String = "null") {
     if (Http.readyState == 4 && Http.status == 200) {
       var data = JSON.parse(Http.response);
       bip115BlockHash = data.blockHash;
-
+      console.log(bip115BlockHeight, bip115BlockHash, lastUTXO.txid, lastUTXO.vout, zAddr)
       const txobj = zencashjs.transaction.createRawTx(
         [{
           txid: lastUTXO.txid, vout: lastUTXO.vout,
-          scriptPubKey: lastUTXO.scriptPubKey
+          scriptPubKey: ''
         }],
         [
           { address: address, satoshis: amountToSend },
@@ -80,8 +72,17 @@ function createHexRawTx(utxos, zen: Number = 0, address: String = "null") {
         bip115BlockHash
       )
 
-      const tx0 = zencashjs.transaction.signTx(txobj, 0, priv, false) // The final argument sets the `compressPubKey` boolean. It is `false` by default.
-      const serializedTx = zencashjs.transaction.serializeTx(tx0);
+      console.log(txobj)
+
+      var sig1 = zencashjs.transaction.multiSign(txobj, 0, privKeys[0], redeemScript)
+
+      var sig2 = zencashjs.transaction.multiSign(txobj, 0, privKeys[1], redeemScript)
+
+      var tx0 = zencashjs.transaction.applyMultiSignatures(txobj, 0, [sig1, sig2], redeemScript)
+
+      var serializedTx = zencashjs.transaction.serializeTx(tx0)
+      console.log(serializedTx);
+
       // sendRawTx(serializedTx)
       return serializedTx;
     }
@@ -107,17 +108,21 @@ function sendRawTx(rawTx: String) {
   http.send(params);
 }
 
-const mnemonic = 'capable under wrap episode giant upset brave illness reward chicken useless above';
-const seed = bip39.mnemonicToSeed(mnemonic).then((respone) => console.log(respone.toString('hex')));
+var phrase = [
+  'sea brown please gold erosion utility table thumb social',
+  'immense globe need dawn people labor shy stomach ostrich',
+  'capable under wrap episode giant upset brave illness reward'
+]
+var privKeys = [];
 
-const root = hdkey.fromMasterSeed(seed);
-const masterPrivateKey = root.privateKey.toString('hex');
-const addrNode = root.derive("m/44'/121'/0'/0/0"); 
-const priv = addrNode._privateKey.toString('hex');
-const pubKey = zencashjs.address.privKeyToPubKey(priv);
-const pubKeyHash = zencashjs.config.testnet.pubKeyHash;
-const zAddr = zencashjs.address.pubKeyToAddr(pubKey, pubKeyHash)
+phrase.forEach((phrase) => {
+  privKeys.push(zencashjs.address.mkPrivKey(phrase));
+});
 
-console.log(zAddr)
+var pubKeys = privKeys.map((x) => zencashjs.address.privKeyToPubKey(x, true))
 
-senZen(0.01, 'ztqxUEzHwpxwSjKHm2AsFAxdbBbLZiYWVqX');
+var redeemScript = zencashjs.address.mkMultiSigRedeemScript(pubKeys, 2, 3)
+var pubKeyHash = zencashjs.config.testnet.pubKeyHash
+var zAddr = zencashjs.address.multiSigRSToAddress(redeemScript, pubKeyHash)
+
+sendZen(0.01, 'ztqxUEzHwpxwSjKHm2AsFAxdbBbLZiYWVqX');
