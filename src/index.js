@@ -30,8 +30,8 @@ function createHexRawTx(utxos, zen: Number = 0, senderAddr: String, recipientAdd
   const lastUTXO = utxos.find(function (transaction) {
     return transaction.height;
   });
-  if (!lastUTXO.height) {
-    alert("Last transaction was not confirmed");
+  if (!lastUTXO || !lastUTXO.height) {
+    alert("UTXO error");
     return;
   }
 
@@ -72,17 +72,16 @@ function createHexRawTx(utxos, zen: Number = 0, senderAddr: String, recipientAdd
         bip115BlockHeight,
         bip115BlockHash
       )
+      console.log(txobj)
 
       var sig1 = zencashjs.transaction.multiSign(txobj, 0, privKeys[0], redeemScript)
-
       var sig2 = zencashjs.transaction.multiSign(txobj, 0, privKeys[1], redeemScript)
 
       var tx0 = zencashjs.transaction.applyMultiSignatures(txobj, 0, [sig1, sig2], redeemScript)
-
       var serializedTx = zencashjs.transaction.serializeTx(tx0)
       console.log(serializedTx);
 
-      // sendRawTx(serializedTx)
+      sendRawTx(serializedTx)
       return serializedTx;
     }
   }
@@ -96,22 +95,22 @@ function sendRawTx(rawTx: String) {
   http.open('POST', url);
   http.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
 
-  http.onreadystatechange = function () {//Call a function when the state changes.
+  http.onreadystatechange = function () {
     if (http.readyState == 4 && http.status == 200) {
       alert(http.responseText);
     }
     else {
-      // alert(http.responseText);
+      // TODO: fail
     }
   }
   http.send(params);
 }
 
-var hdnode;
+//////// Main::START
 var privKeys = [];
 var pubKeys;
 var redeemScript;
-var pubKeyHash;
+var scriptHash;
 var zAddr;
 
 const mnemonic = [
@@ -124,21 +123,16 @@ const seed = mnemonic.map((each) => bip39.mnemonicToSeed(each));
 var hdmasternode = [];
 Promise.all(seed).then((response) => {
   for (var i = 0; i < response.length; i++) {
-    // const root = hdkey.fromMasterSeed(response[i]);
-    // hdmasternode.push(root);
-    // const addrNode = root.derive("m"); //line 1
-    // privKeys.push(addrNode._privateKey.toString('hex'));
     const hdnode = bip32.fromSeed(response[i]);
     const derivedNode = hdnode.derive(0);
     privKeys.push(derivedNode.privateKey.toString('hex'));
   }
 
   pubKeys = privKeys.map((x) => zencashjs.address.privKeyToPubKey(x, true))
-
   redeemScript = zencashjs.address.mkMultiSigRedeemScript(pubKeys, 2, 3)
-  pubKeyHash = zencashjs.config.testnet.pubKeyHash
-  zAddr = zencashjs.address.multiSigRSToAddress(redeemScript, pubKeyHash)
-  console.log(zAddr);
+  scriptHash = zencashjs.config.testnet.scriptHash
+  zAddr = zencashjs.address.multiSigRSToAddress(redeemScript, scriptHash)
 
-  sendZen(0.001, zAddr, 'ztqxUEzHwpxwSjKHm2AsFAxdbBbLZiYWVqX');
+  sendZen(0.0001, zAddr, 'ztqxUEzHwpxwSjKHm2AsFAxdbBbLZiYWVqX');
 });
+//////// Main::END
