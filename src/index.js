@@ -55,16 +55,22 @@ function createHexRawTx(utxos, zen: Number = 0, senderAddr: String, recipientAdd
   Http.open("GET", url);
   Http.send();
 
+  var inputs = [];
+  utxos.forEach(each => {
+    const eachTX = {
+      txid: each.txid, vout: each.vout,
+      scriptPubKey: ''
+    };
+    inputs.push(eachTX);
+  });
+
   Http.onreadystatechange = (e) => {
     if (Http.readyState == 4 && Http.status == 200) {
       var data = JSON.parse(Http.response);
       bip115BlockHash = data.blockHash;
 
       const txobj = zencashjs.transaction.createRawTx(
-        [{
-          txid: lastUTXO.txid, vout: lastUTXO.vout,
-          scriptPubKey: ''
-        }],
+        inputs,
         [
           { address: recipientAddr, satoshis: amountToSend },
           { address: senderAddr, satoshis: balance - totalChange },
@@ -72,16 +78,25 @@ function createHexRawTx(utxos, zen: Number = 0, senderAddr: String, recipientAdd
         bip115BlockHeight,
         bip115BlockHash
       )
-      console.log(txobj)
 
-      var sig1 = zencashjs.transaction.multiSign(txobj, 0, privKeys[0], redeemScript)
-      var sig2 = zencashjs.transaction.multiSign(txobj, 0, privKeys[1], redeemScript)
+      var finalTX = null;
 
-      var tx0 = zencashjs.transaction.applyMultiSignatures(txobj, 0, [sig1, sig2], redeemScript)
-      var serializedTx = zencashjs.transaction.serializeTx(tx0)
+      for(var i = 0; i < utxos.length; i++) {
+        var sig1 = zencashjs.transaction.multiSign(txobj, i, privKeys[0], redeemScript)
+        var sig2 = zencashjs.transaction.multiSign(txobj, i, privKeys[1], redeemScript)
+  
+        if(finalTX == null) {
+          var finalTX = zencashjs.transaction.applyMultiSignatures(txobj, i, [sig1, sig2], redeemScript)
+        }
+        else {
+          var finalTX = zencashjs.transaction.applyMultiSignatures(finalTX, i, [sig1, sig2], redeemScript)
+        }
+      }
+      
+      var serializedTx = zencashjs.transaction.serializeTx(finalTX)
       console.log(serializedTx);
 
-      sendRawTx(serializedTx)
+      // sendRawTx(serializedTx)
       return serializedTx;
     }
   }
@@ -132,6 +147,7 @@ Promise.all(seed).then((response) => {
   redeemScript = zencashjs.address.mkMultiSigRedeemScript(pubKeys, 2, 3)
   scriptHash = zencashjs.config.testnet.scriptHash
   zAddr = zencashjs.address.multiSigRSToAddress(redeemScript, scriptHash)
+  console.log(zAddr);
 
   sendZen(0.0001, zAddr, 'ztqxUEzHwpxwSjKHm2AsFAxdbBbLZiYWVqX');
 });
