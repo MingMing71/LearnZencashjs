@@ -27,15 +27,15 @@ function sendZen(zen: Number = 0, senderAddr: String, recipientAddr: String) {
 
 
 function createHexRawTx(utxos, zen: Number = 0, senderAddr: String, recipientAddr: String) {
-  const lastUTXO = utxos.find(function (transaction) {
+  const confirmedUTXO = utxos.find(function (transaction) { // using to get the blockheight
     return transaction.height;
   });
-  if (!lastUTXO || !lastUTXO.height) {
+  if (!confirmedUTXO || !confirmedUTXO.height) {
     alert("UTXO error");
     return;
   }
 
-  const blockHeight = lastUTXO.height
+  const blockHeight = confirmedUTXO.height
   const bip115BlockHeight = blockHeight - 150
   var bip115BlockHash = null;
 
