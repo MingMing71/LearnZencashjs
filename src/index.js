@@ -152,6 +152,6 @@ Promise.all(seed).then((response) => {
   zAddr = zencashjs.address.multiSigRSToAddress(redeemScript, scriptHash)
   console.log(zAddr);
 
-  sendZen(0.992001, zAddr, 'ztZuyD5MaPSNdEyDKCZFc6vjyHVshWPWrLg');
+  sendZen(0.0001, zAddr, 'ztZuyD5MaPSNdEyDKCZFc6vjyHVshWPWrLg');
 });
 //////// Main::END
