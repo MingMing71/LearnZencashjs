@@ -48,7 +48,8 @@ function createHexRawTx(utxos, zen: Number = 0, senderAddr: String, recipientAdd
   }
 
   const amountToSend = zen * 100000000;
-  const totalChange = amountToSend * 1.01; // fee 1%
+  const fee = 0.01; // fee 1%
+  const totalChange = amountToSend * (1.0 + fee);
 
   const Http = new XMLHttpRequest();
   const url = 'https://explorer-testnet.zensystem.io/api/block-index/' + bip115BlockHeight
@@ -78,6 +79,8 @@ function createHexRawTx(utxos, zen: Number = 0, senderAddr: String, recipientAdd
         bip115BlockHeight,
         bip115BlockHash
       )
+
+      console.log(amountToSend, balance - totalChange)
 
       var finalTX = null;
 
@@ -149,6 +152,6 @@ Promise.all(seed).then((response) => {
   zAddr = zencashjs.address.multiSigRSToAddress(redeemScript, scriptHash)
   console.log(zAddr);
 
-  sendZen(0.0001, zAddr, 'ztqxUEzHwpxwSjKHm2AsFAxdbBbLZiYWVqX');
+  sendZen(0.992001, zAddr, 'ztZuyD5MaPSNdEyDKCZFc6vjyHVshWPWrLg');
 });
 //////// Main::END
