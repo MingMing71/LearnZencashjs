@@ -48,7 +48,7 @@ function createHexRawTx(utxos, zen: Number = 0, senderAddr: String, recipientAdd
   }
 
   const amountToSend = zen * 100000000;
-  const fee = 0.01; // fee 1%
+  const fee = 0.00001; // fee 0.001%
   const totalChange = amountToSend * (1.0 + fee);
 
   const Http = new XMLHttpRequest();
